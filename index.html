@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>YouTube Video Dataset</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+      }
+
+      .header {
+        display: flex;
+        align-items: center;
+        background: #da0d0d;
+        color: #fff;
+        padding: 10px;
+      }
+
+      .logo img {
+        width: 50px;
+        height: 50px;
+      }
+
+      .search-bar {
+        width: 698px;
+        height: 59px;
+        display: flex;
+        align-items: center;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        padding: 5px;
+      }
+
+      #search-input {
+        flex: 1;
+        border: none;
+        outline: none;
+      }
+
+      #search-button {
+        background: none;
+        border: none;
+        outline: none;
+        cursor: pointer;
+        font-size: 24px;
+      }
+
+      .video-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+      }
+
+      .video-box {
+        width: calc(33.33% - 20px);
+        margin-bottom: 20px;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+      }
+
+      .video-box iframe {
+        width: 100%;
+        height: 250px;
+      }
+
+      .video-details {
+        padding: 10px;
+      }
+
+      .video-title {
+        font-weight: bold;
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <div class="logo">
+        <img src="logo.jpeg" alt="ALT YouTube Logo" />
+      </div>
+      <div class="search-bar">
+        <input
+          type="text"
+          id="search-input"
+          placeholder="Search for videos..."
+        />
+        <button id="search-button" aria-label="Search">🔍</button>
+      </div>
+    </div>
+    <div class="video-container">
+      {% for video in videos if "Video unavailable" not in video %}
+      <div class="video-box">
+        <div class="video-player">
+          <iframe
+            src="{{ video.EmbedURL }}"
+            frameborder="0"
+            allow="autoplay; encrypted-media"
+            allowfullscreen
+          ></iframe>
+        </div>
+        <div class="video-details">
+          <h2 class="video-title">{{ video.Title }}</h2>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <button id="load-more" data-page="2">Load More</button>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const loadMoreButton = document.getElementById("load-more");
+        let page = 2; // Initialize the page counter
+
+        loadMoreButton.addEventListener("click", function () {
+          // Use a fetch request to load more videos
+          fetch(`/?page=${page}`)
+            .then((response) => response.text())
+            .then((data) => {
+              const parser = new DOMParser();
+              const doc = parser.parseFromString(data, "text/html");
+              const newVideos = doc.querySelectorAll(".video-box");
+              if (newVideos.length > 0) {
+                newVideos.forEach((video) => {
+                  document.querySelector(".video-container").appendChild(video);
+                });
+                page++; // Increment the page counter for the next load
+              } else {
+                loadMoreButton.style.display = "none";
+              }
+            })
+            .catch((error) => console.error(error));
+        });
+
+        function performSearch() {
+          const searchInput = document.getElementById("search-input");
+          const searchQuery = searchInput.value.toLowerCase();
+
+          // Filter videos based on the search query
+          const filteredVideos = Array.from(
+            document.querySelectorAll(".video-box")
+          ).filter((video) => {
+            const title = video.querySelector("h2").textContent.toLowerCase();
+            return title.includes(searchQuery);
+          });
+
+          // Display the filtered videos and hide the others
+          document.querySelectorAll(".video-box").forEach((video) => {
+            if (filteredVideos.includes(video)) {
+              video.style.display = "block";
+            } else {
+              video.style.display = "none";
+            }
+          });
+        }
+
+        document
+          .getElementById("search-button")
+          .addEventListener("click", performSearch);
+        document
+          .getElementById("search-input")
+          .addEventListener("input", performSearch);
+      });
+    </script>
+  </body>
+</html>
